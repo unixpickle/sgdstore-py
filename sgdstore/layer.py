@@ -19,6 +19,13 @@ class Layer(ABC):
         pass
 
     @abstractproperty
+    def output_shape(self):
+        """
+        Get the shape of outputs from the layer.
+        """
+        pass
+
+    @abstractproperty
     def param_shapes(self):
         """
         Get the shapes of all the network parameters.
@@ -50,10 +57,16 @@ class Stack(Layer):
     """
     def __init__(self, layers):
         self.layers = layers
+        for layer_1, layer_2 in zip(layers, layers[1:]):
+            assert layer_1.output_shape == layer_2.input_shape
 
     @property
     def input_shape(self):
         return self.layers[0].input_shape
+
+    @property
+    def output_shape(self):
+        return self.layers[-1].output_shape
 
     @property
     def param_shapes(self):
@@ -92,6 +105,10 @@ class FC(Layer):
     @property
     def input_shape(self):
         return (self.num_inputs,)
+
+    @property
+    def output_shape(self):
+        return (self.num_outputs,)
 
     @property
     def param_shapes(self):
