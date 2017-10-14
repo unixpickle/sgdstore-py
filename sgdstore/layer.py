@@ -26,6 +26,13 @@ class Layer(ABC):
         pass
 
     @abstractmethod
+    def init_params(self):
+        """
+        Generate a list of initial parameter Tensors.
+        """
+        pass
+
+    @abstractmethod
     def apply(self, input_batches, params_batch):
         """
         Apply a batch of layers to a batch of input
@@ -52,6 +59,9 @@ class Stack(Layer):
     def param_shapes(self):
         return [shape for layer in self.layers for shape in layer.param_shapes]
 
+    def init_params(self):
+        return [val for layer in self.layers for val in layer.init_params()]
+
     def apply(self, input_batches, params_batch):
         param_offset = 0
         cur_outs = input_batches
@@ -66,10 +76,18 @@ class FC(Layer):
     """
     A fully-connected layer.
     """
-    def __init__(self, num_inputs, num_outputs, activation=tf.nn.tanh):
+    # pylint: disable=R0913
+    def __init__(self,
+                 num_inputs,
+                 num_outputs,
+                 activation=tf.nn.tanh,
+                 weights_initializer=tf.contrib.layers.xavier_initializer(),
+                 bias_initializer=tf.zeros_initializer()):
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.activation = activation
+        self.weights_initializer = weights_initializer
+        self.bias_initializer = bias_initializer
 
     @property
     def input_shape(self):
@@ -78,6 +96,11 @@ class FC(Layer):
     @property
     def param_shapes(self):
         return [(self.num_inputs, self.num_outputs), (self.num_outputs,)]
+
+    def init_params(self):
+        weight_shape, bias_shape = self.param_shapes
+        return [self.weights_initializer(weight_shape),
+                self.bias_initializer(bias_shape)]
 
     def apply(self, input_batches, params_batch):
         assert len(params_batch) == 2
