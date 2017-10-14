@@ -1,3 +1,3 @@
 """
-An RNNCell for the SGDStore architecture.
+A TensorFlow implementation of the sgdstore architecture.
 """

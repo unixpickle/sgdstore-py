@@ -1,5 +1,5 @@
 """
-Neural networks that can be used as SGDStore blocks.
+Neural networks that can be used as sgdstore blocks.
 """
 
 from abc import ABC, abstractmethod, abstractproperty
