@@ -98,7 +98,7 @@ class FC(Layer):
                  bias_initializer=tf.zeros_initializer()):
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
-        self.activation = activation
+        self.activation = activation or (lambda x: x)
         self.weights_initializer = weights_initializer
         self.bias_initializer = bias_initializer
 
