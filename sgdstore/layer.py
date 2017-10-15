@@ -33,7 +33,7 @@ class Layer(ABC):
         pass
 
     @abstractmethod
-    def init_params(self, dtype=None):
+    def init_params(self, dtype=tf.float32):
         """
         Generate a list of initial parameter Tensors.
         """
@@ -72,7 +72,7 @@ class Stack(Layer):
     def param_shapes(self):
         return [shape for layer in self.layers for shape in layer.param_shapes]
 
-    def init_params(self, dtype=None):
+    def init_params(self, dtype=tf.float32):
         return [val for layer in self.layers for val in layer.init_params(dtype=dtype)]
 
     def apply(self, input_batches, params_batch):
@@ -114,7 +114,7 @@ class FC(Layer):
     def param_shapes(self):
         return [(self.num_inputs, self.num_outputs), (self.num_outputs,)]
 
-    def init_params(self, dtype=None):
+    def init_params(self, dtype=tf.float32):
         weight_shape, bias_shape = self.param_shapes
         return [self.weights_initializer(weight_shape, dtype=dtype),
                 self.bias_initializer(bias_shape, dtype=dtype)]
