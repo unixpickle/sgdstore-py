@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.rnn import RNNCell # pylint: disable=E0611
 
+# pylint: disable=R0902
 class Cell(RNNCell):
     """
     A recurrent cell that uses the parameters of a Layer
@@ -25,6 +26,7 @@ class Cell(RNNCell):
                  init_lr=0.2,
                  initializer=tf.contrib.layers.xavier_initializer(),
                  loss=tf.losses.mean_squared_error,
+                 flatten_output=True,
                  reuse=None):
         """
         Setup a new cell.
@@ -37,6 +39,8 @@ class Cell(RNNCell):
           init_lr: initial SGD step size.
           initializer: initializer for the projection
             matrices.
+          loss: objective to maximize at each step.
+          flatten_output: flatten the query results.
           reuse: reuse variables in an existing scope.
         """
         super(Cell, self).__init__(_reuse=reuse)
@@ -47,6 +51,7 @@ class Cell(RNNCell):
         self._init_lr = init_lr
         self._initializer = initializer
         self._loss = loss
+        self._flatten_output = flatten_output
 
     @property
     def layer(self):
@@ -61,6 +66,8 @@ class Cell(RNNCell):
 
     @property
     def output_size(self):
+        if self._flatten_output:
+            return int(self._query_batch * np.prod(self._layer.output_shape))
         return tf.TensorShape(list((self._query_batch,) + self._layer.output_shape))
 
     def random_state(self, batch_size, dtype):
@@ -70,13 +77,17 @@ class Cell(RNNCell):
         Similar to zero_state(), except that the result is
         non-deterministic.
         """
-        randoms = zip(*[self._layer.init_params(dtype=dtype) for _ in batch_size])
+        randoms = zip(*[self._layer.init_params(dtype=dtype)
+                        for _ in range(batch_size)])
         return tuple(map(tf.stack, randoms))
 
     # pylint: disable=W0221
     def call(self, inputs, state):
         new_state = self._train_state(inputs, state)
-        return self._run_query(inputs, new_state), new_state
+        outputs = self._run_query(inputs, new_state)
+        if self._flatten_output:
+            outputs = tf.reshape(outputs, (tf.shape(outputs)[0], self.output_size))
+        return outputs, new_state
 
     def _train_state(self, inputs, state):
         """
