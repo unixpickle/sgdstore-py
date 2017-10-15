@@ -8,6 +8,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.rnn import RNNCell # pylint: disable=E0611
 
+from .loss import batched_mse
+
 # pylint: disable=R0902
 class Cell(RNNCell):
     """
@@ -25,7 +27,7 @@ class Cell(RNNCell):
                  num_steps=1,
                  init_lr=0.2,
                  initializer=tf.contrib.layers.xavier_initializer(),
-                 loss=tf.losses.mean_squared_error,
+                 loss=batched_mse,
                  flatten_output=True,
                  reuse=None):
         """
@@ -39,7 +41,7 @@ class Cell(RNNCell):
           init_lr: initial SGD step size.
           initializer: initializer for the projection
             matrices.
-          loss: objective to maximize at each step.
+          loss: batched loss function to minimize.
           flatten_output: flatten the query results.
           reuse: reuse variables in an existing scope.
         """
@@ -106,9 +108,7 @@ class Cell(RNNCell):
         cur_state = state
         for _ in range(self._num_steps):
             predictions = self._layer.apply(train_ins, cur_state)
-            loss = tf.reduce_sum(tf.map_fn(lambda x: self._loss(x[0], x[1]),
-                                           (train_targets, predictions),
-                                           dtype=tf.float32))
+            loss = tf.reduce_sum(self._loss(train_targets, predictions))
             cur_state = _gradient_step(cur_state, loss, step_sizes)
         return cur_state
 
