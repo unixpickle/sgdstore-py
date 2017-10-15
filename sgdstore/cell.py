@@ -5,10 +5,8 @@ RNNCell implementations.
 import math
 
 import numpy as np
-
-# pylint: disable=E0611
 import tensorflow as tf
-from tensorflow.contrib.rnn import RNNCell
+from tensorflow.contrib.rnn import RNNCell # pylint: disable=E0611
 
 class Cell(RNNCell):
     """
@@ -64,6 +62,16 @@ class Cell(RNNCell):
     @property
     def output_size(self):
         return tf.TensorShape(list((self._query_batch,) + self._layer.output_shape))
+
+    def random_state(self, batch_size, dtype):
+        """
+        Generate a batch of a random states.
+
+        Similar to zero_state(), except that the result is
+        non-deterministic.
+        """
+        randoms = zip(*[self._layer.init_params(dtype=dtype) for _ in batch_size])
+        return tuple(map(tf.stack, randoms))
 
     # pylint: disable=W0221
     def call(self, inputs, state):

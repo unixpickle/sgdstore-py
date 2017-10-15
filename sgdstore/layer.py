@@ -33,7 +33,7 @@ class Layer(ABC):
         pass
 
     @abstractmethod
-    def init_params(self):
+    def init_params(self, dtype=None):
         """
         Generate a list of initial parameter Tensors.
         """
@@ -72,8 +72,8 @@ class Stack(Layer):
     def param_shapes(self):
         return [shape for layer in self.layers for shape in layer.param_shapes]
 
-    def init_params(self):
-        return [val for layer in self.layers for val in layer.init_params()]
+    def init_params(self, dtype=None):
+        return [val for layer in self.layers for val in layer.init_params(dtype=dtype)]
 
     def apply(self, input_batches, params_batch):
         param_offset = 0
@@ -114,10 +114,10 @@ class FC(Layer):
     def param_shapes(self):
         return [(self.num_inputs, self.num_outputs), (self.num_outputs,)]
 
-    def init_params(self):
+    def init_params(self, dtype=None):
         weight_shape, bias_shape = self.param_shapes
-        return [self.weights_initializer(weight_shape),
-                self.bias_initializer(bias_shape)]
+        return [self.weights_initializer(weight_shape, dtype=dtype),
+                self.bias_initializer(bias_shape, dtype=dtype)]
 
     def apply(self, input_batches, params_batch):
         assert len(params_batch) == 2
